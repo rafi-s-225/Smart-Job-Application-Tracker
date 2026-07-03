@@ -28,6 +28,9 @@ mongoose.connect(process.env.MONGO_URI)
 const jobRoutes = require("./routes/jobRoutes")
 app.use("/api/jobs",jobRoutes)
 
+const authRoutes = require("./routes/authRoutes")
+app.use("/api/auth",authRoutes)
+
 
 app.listen(PORT, () => {
     console.log("Server Started on port " + PORT)
