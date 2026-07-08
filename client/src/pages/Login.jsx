@@ -29,7 +29,7 @@ function Login() {
   }
 
   return (
-    <div>
+    <div ckassName = "auth-container">
       <h2>Login</h2>
 
       {error && <p>{error}</p>}
