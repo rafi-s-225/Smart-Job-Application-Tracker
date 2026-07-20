@@ -1,37 +1,67 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  console.error('Missing JWT_SECRET in environment. Set this before running the server.')
+  process.exit(1)
+}
+
 const app = express();
-app.use(cors());
+app.use(helmet());
+
+const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:5173'];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests from this IP, please try again later.' }
+});
+app.use(limiter);
 
 const PORT = process.env.PORT || 5000;
 
-app.get("/", (req,res) => {
-    res.send("JOb Tracker Server is running")
+app.get('/', (req, res) => {
+  res.send('Job Tracker Server is running');
 });
 
-mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-    console.log("MongoDB connected")
-})
-.catch((err) => {
-    console.log("MongoDB connection failed")
-    console.log(err)
-})
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log('MongoDB connected');
+  })
+  .catch((err) => {
+    console.error('MongoDB connection failed');
+    console.error(err);
+  });
 
+const jobRoutes = require('./routes/jobRoutes');
+app.use('/api/jobs', jobRoutes);
 
-const jobRoutes = require("./routes/jobRoutes")
-app.use("/api/jobs",jobRoutes)
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 
-const authRoutes = require("./routes/authRoutes")
-app.use("/api/auth",authRoutes)
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: 'Server error' });
+});
 
 app.listen(PORT, () => {
-    console.log("Server Started on port " + PORT)
-})
+  console.log('Server started on port ' + PORT);
+});

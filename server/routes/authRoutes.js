@@ -1,56 +1,72 @@
-const express = require("express")
+const express = require('express')
 const router = express.Router()
-const bcrypt = require("bcryptjs")
-const jwt = require("jsonwebtoken")
-const User = require("../models/User")
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+const User = require('../models/User')
 
-router.post("/register", async (req, res) => {
+const validateEmail = (email) => typeof email === 'string' && /^\S+@\S+\.\S+$/.test(email)
+const validatePassword = (password) => typeof password === 'string' && password.length >= 8
+
+router.post('/register', async (req, res) => {
   try {
-    const existingUser = await User.findOne({ email: req.body.email })
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" })
+    const { name, email, password } = req.body
+
+    if (!name || !validateEmail(email) || !validatePassword(password)) {
+      return res.status(400).json({ message: 'Name, valid email, and password of at least 8 characters are required.' })
     }
 
-    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' })
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     const newUser = new User({
-      name: req.body.name,
-      email: req.body.email,
+      name,
+      email,
       password: hashedPassword
     })
 
     const savedUser = await newUser.save()
 
+    const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+
     res.status(201).json({
-      id: savedUser._id,
-      name: savedUser.name,
-      email: savedUser.email
+      token,
+      user: {
+        id: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email
+      }
     })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 })
 
-router.post("/login", async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email })
+    const { email, password } = req.body
+
+    if (!validateEmail(email) || !validatePassword(password)) {
+      return res.status(400).json({ message: 'Invalid email or password' })
+    }
+
+    const user = await User.findOne({ email })
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" })
+      return res.status(400).json({ message: 'Invalid email or password' })
     }
 
-    const isMatch = await bcrypt.compare(req.body.password, user.password)
+    const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" })
+      return res.status(400).json({ message: 'Invalid email or password' })
     }
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    )
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
     res.json({
-      token: token,
+      token,
       user: {
         id: user._id,
         name: user.name,

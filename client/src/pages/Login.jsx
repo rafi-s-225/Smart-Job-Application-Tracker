@@ -15,8 +15,8 @@ function Login() {
 
     try {
       const response = await api.post("/auth/login", {
-        email: email,
-        password: password
+        email,
+        password
       })
 
       localStorage.setItem("token", response.data.token)
@@ -24,43 +24,53 @@ function Login() {
 
       navigate("/dashboard")
     } catch (err) {
-      setError(err.response.data.message)
+      setError(err.response?.data?.message || "Login failed. Please try again.")
     }
   }
 
   return (
-    <div ckassName = "auth-container">
-      <h2>Login</h2>
-
-      {error && <p>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    <div className="page-shell auth-page">
+      <div className="auth-card">
+        <div className="auth-header">
+          <p className="eyebrow">Welcome back</p>
+          <h1>Login to your tracker</h1>
+          <p className="subtext">Manage applications, track deadlines, and stay on top of every opportunity.</p>
         </div>
 
-        <div>
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        {error && <div className="form-alert">{error}</div>}
 
-        <button type="submit">Login</button>
-      </form>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
 
-      <p>
-        Don't have an account? <Link to="/register">Register here</Link>
-      </p>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <button className="primary-button" type="submit">Continue</button>
+        </form>
+
+        <p className="footer-text">
+          Don't have an account? <Link to="/register">Create one</Link>
+        </p>
+      </div>
     </div>
   )
 }

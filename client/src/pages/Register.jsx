@@ -15,61 +15,76 @@ function Register() {
     setError("")
 
     try {
-      await api.post("/auth/register", {
-        name: name,
-        email: email,
-        password: password
+      const response = await api.post("/auth/register", {
+        name,
+        email,
+        password
       })
 
-      navigate("/")
+      localStorage.setItem("token", response.data.token)
+      localStorage.setItem("userName", response.data.user.name)
+
+      navigate("/dashboard")
     } catch (err) {
-      setError(err.response.data.message)
+      setError(err.response?.data?.message || "Registration failed. Please try again.")
     }
   }
 
   return (
-    <div className="auth-container">
-      <h2>Register</h2>
-
-      {error && <p>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+    <div className="page-shell auth-page">
+      <div className="auth-card">
+        <div className="auth-header">
+          <p className="eyebrow">Create your account</p>
+          <h1>Register for the job tracker</h1>
+          <p className="subtext">Secure your data and start tracking every job application in one place.</p>
         </div>
 
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
+        {error && <div className="form-alert">{error}</div>}
 
-        <div>
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="name">Name</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your full name"
+              required
+            />
+          </div>
 
-        <button type="submit">Register</button>
-      </form>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
 
-      <p>
-        Already have an account? <Link to="/">Login here</Link>
-      </p>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              required
+            />
+          </div>
+
+          <button className="primary-button" type="submit">Create account</button>
+        </form>
+
+        <p className="footer-text">
+          Already have an account? <Link to="/">Login here</Link>
+        </p>
+      </div>
     </div>
   )
 }
