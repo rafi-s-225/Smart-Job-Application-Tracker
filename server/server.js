@@ -35,10 +35,10 @@ app.use(limiter);
 const PORT = process.env.PORT || 5000;
 
 app.get('/', (req, res) => {
-  res.send('Job Tracker Server is running');
+  res.send('JobPilot AI Server is running');
 });
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
   })
@@ -52,6 +52,9 @@ app.use('/api/jobs', jobRoutes);
 
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
+
+const aiRoutes = require('./routes/aiRoutes');
+app.use('/api/ai', aiRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });

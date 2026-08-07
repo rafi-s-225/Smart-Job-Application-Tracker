@@ -3,8 +3,22 @@ const router = express.Router()
 const JobApplication = require('../models/JobApplication')
 const protect = require('../middleware/authMiddleware')
 
-const allowedUpdates = ['companyName', 'jobRole', 'applicationDate', 'status', 'deadline', 'notes']
-const allowedStatuses = ['Applied', 'Interview', 'Offer', 'Rejected']
+const allowedUpdates = [
+  'companyName',
+  'jobRole',
+  'applicationDate',
+  'status',
+  'deadline',
+  'notes',
+  'salary',
+  'location',
+  'jobUrl',
+  'contactName',
+  'contactEmail',
+  'favorite'
+]
+
+const allowedStatuses = ['Wishlist', 'Applied', 'Interview', 'Offer', 'Rejected', 'Withdrawn']
 
 router.get('/', protect, async (req, res) => {
   try {
@@ -15,9 +29,65 @@ router.get('/', protect, async (req, res) => {
   }
 })
 
+router.get('/stats', protect, async (req, res) => {
+  try {
+    const applications = await JobApplication.find({ user: req.userId })
+    const total = applications.length
+    
+    const statusCounts = {
+      Wishlist: 0,
+      Applied: 0,
+      Interview: 0,
+      Offer: 0,
+      Rejected: 0,
+      Withdrawn: 0
+    }
+
+    const now = new Date()
+    const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+    let upcomingDeadlinesCount = 0
+
+    applications.forEach(app => {
+      if (statusCounts[app.status] !== undefined) {
+        statusCounts[app.status]++
+      }
+      if (app.deadline && new Date(app.deadline) >= now && new Date(app.deadline) <= in7Days) {
+        upcomingDeadlinesCount++
+      }
+    })
+
+    const responseRate = total > 0 
+      ? Math.round(((statusCounts.Interview + statusCounts.Offer + statusCounts.Rejected) / total) * 100)
+      : 0
+
+    res.json({
+      total,
+      statusCounts,
+      responseRate,
+      upcomingDeadlinesCount
+    })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
 router.post('/', protect, async (req, res) => {
   try {
-    const { companyName, jobRole, applicationDate, status, deadline, notes } = req.body
+    const {
+      companyName,
+      jobRole,
+      applicationDate,
+      status,
+      deadline,
+      notes,
+      salary,
+      location,
+      jobUrl,
+      contactName,
+      contactEmail,
+      favorite
+    } = req.body
 
     if (!companyName || !jobRole || !applicationDate) {
       return res.status(400).json({ message: 'Company name, job role, and application date are required.' })
@@ -31,9 +101,15 @@ router.post('/', protect, async (req, res) => {
       companyName,
       jobRole,
       applicationDate,
-      status,
-      deadline,
-      notes,
+      status: status || 'Applied',
+      deadline: deadline || null,
+      notes: notes || '',
+      salary: salary || '',
+      location: location || '',
+      jobUrl: jobUrl || '',
+      contactName: contactName || '',
+      contactEmail: contactEmail || '',
+      favorite: Boolean(favorite),
       user: req.userId
     })
     const savedApplication = await newApplication.save()

@@ -3,9 +3,26 @@ const router = express.Router()
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const protect = require('../middleware/authMiddleware')
 
 const validateEmail = (email) => typeof email === 'string' && /^\S+@\S+\.\S+$/.test(email)
 const validatePassword = (password) => typeof password === 'string' && password.length >= 8
+
+router.get('/me', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password')
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email
+    })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
 
 router.post('/register', async (req, res) => {
   try {
