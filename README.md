@@ -94,3 +94,10 @@ npm install
 npm run dev
 ```
 Open your browser at `http://localhost:5173`.
+
+### 3. Reset Database (Optional)
+To wipe all test data and reset the database:
+```bash
+cd server
+npm run db:reset
+```
