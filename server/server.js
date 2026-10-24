@@ -15,9 +15,25 @@ if (!process.env.JWT_SECRET) {
 const app = express();
 app.use(helmet());
 
-const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:5173'];
+const clientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.trim().replace(/\/$/, '') : null;
+const allowedOrigins = [
+  clientUrl,
+  'https://jobpilot-ai-rafi.vercel.app',
+  'http://localhost:5173'
+].filter(Boolean);
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.includes('localhost')
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error('Blocked by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
